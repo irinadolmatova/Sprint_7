@@ -1,7 +1,7 @@
 import pytest
 import allure
 import requests
-from urls import BASE_URL, COURIER_CREATE, COURIER_LOGIN
+from URLS import *
 from helpers import *
 
 class TestCourierLogin:
@@ -13,10 +13,9 @@ class TestCourierLogin:
 
         payload = {
             "login": courier["login"],
-            "password": courier["password"],
-            "firstName": courier["first_name"]
+            "password": courier["password"]
         }
-        response = requests.post(f"{BASE_URL}{COURIER_CREATE}", data=payload)
+        response = requests.post(f"{BASE_URL}{COURIER_LOGIN}", data=payload)
         assert response.status_code == 200
         user_data = response.json()
         assert "id" in user_data
@@ -44,7 +43,10 @@ class TestCourierLogin:
     @allure.title("Отсутствие обязательных полей login или password возвращает ошибку 400")
     @pytest.mark.parametrize("missing_field", ["login", "password"])
     def test_login_missing_fields(self, missing_field):
-        payload = {"login": "testlogin", "password": "testpass"}
+        payload = {
+        "login": generate_random_string(10),
+        "password": generate_random_string(10)
+    }
         del payload[missing_field]
         response = requests.post(f"{BASE_URL}{COURIER_LOGIN}", data=payload)
         assert response.status_code == 400
@@ -62,4 +64,5 @@ class TestCourierLogin:
         response = requests.post(f"{BASE_URL}{COURIER_LOGIN}", data=payload)
         assert response.status_code == 404
         assert "message" in response.json()
-        assert ERROR_NOT_ENOUGH_DATA_LOGIN in response.json()["message"]
+        assert ERROR_ACCOUNT_NOT_FOUND in response.json()["message"]
+        
