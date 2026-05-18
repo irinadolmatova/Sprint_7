@@ -1,8 +1,7 @@
 import pytest
 import allure
-import requests
-from URLS import *
-from helpers import *
+from generators import create_order_data
+from api_methods.api_client import APIClient
 
 class TestOrderCreation:
 
@@ -14,12 +13,8 @@ class TestOrderCreation:
             None
         ])
     def test_create_order_with_colors_parametrized(self, colors):
-        payload = ORDER_CREATE_DATA.copy()
-        if colors is not None:
-            payload["color"] = colors
-        else:
-            payload.pop("color", None)
-        response = requests.post(f"{BASE_URL}{ORDERS_LIST}", data=payload)
+        payload = create_order_data(colors)
+        response = APIClient.create_order(payload)
         assert response.status_code == 201
         assert "track" in response.json()
         

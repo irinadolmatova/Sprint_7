@@ -1,24 +1,24 @@
 import pytest
 import allure
-import requests
-from URLS import BASE_URL, COURIER_CREATE
-from helpers import *
+from data import *
+from api_methods.api_client import APIClient
 
 class TestCourierCreation:
 
     @allure.title('Успешное создание курьера')
-    def test_create_courier_success(self, create_and_delete_courier):
-        courier = create_and_delete_courier()
+    def test_create_courier_success(self, create_courier, delete_courier):
+        courier = create_courier()
         assert courier is not None
         response = courier["creation_response"]
         assert response.status_code == 201
         assert response.json() == {"ok": True}
+        delete_courier(courier["id"])
 
 
 
     @allure.title("Нельзя создать двух одинаковых курьеров")
-    def test_create_duplicate_courier(self, create_and_delete_courier):
-        first_courier = create_and_delete_courier()
+    def test_create_duplicate_courier(self, create_courier, delete_courier):
+        first_courier = create_courier()
         assert first_courier is not None
 
         duplicate_payload = {
@@ -26,24 +26,27 @@ class TestCourierCreation:
             "password": first_courier["password"],
             "firstName": first_courier["first_name"]
         }
-        duplicate_response = requests.post(f"{BASE_URL}{COURIER_CREATE}", data=duplicate_payload)
-        assert duplicate_response.status_code == 409
-        assert "message" in duplicate_response.json()
-        assert ERROR_LOGIN_ALREADY_USED in duplicate_response.json()["message"]
+        response = APIClient.create_courier(duplicate_payload)
+        assert response.status_code == 409
+        assert "message" in response.json()
+        assert ERROR_LOGIN_ALREADY_USED in response.json()["message"]
+        delete_courier(first_courier["id"])
         
 
 
     @allure.title("Создание курьера с отсутствующим обязательным полем: {missing_field}")
     @pytest.mark.parametrize("missing_field", ["login", "password", "firstName"])
-    def test_missing_required_fields(self, missing_field):
+    def test_missing_required_fields(self, missing_field, create_courier, delete_courier):
+        courier = create_courier()
+        assert courier is not None
         payload = {
-            "login": "testlogin12345",
-            "password": "testpass12345",
-            "firstName": "testname12345"
+            "login": courier["login"],
+            "password": courier["password"],
+            "firstName": courier["first_name"]
         }
         del payload[missing_field]
 
-        response = requests.post(f"{BASE_URL}{COURIER_CREATE}", data=payload)
+        response = APIClient.create_courier(payload)
         assert response.status_code == 400
         assert "message" in response.json()
         assert ERROR_NOT_ENOUGH_DATA_CREATE in response.json()["message"]
