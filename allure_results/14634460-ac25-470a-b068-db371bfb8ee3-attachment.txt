@@ -1,0 +1,1 @@
+[33mWARNING [0m conftest:conftest.py:35 Не удалось удалить курьера с ID None, статус: 500
